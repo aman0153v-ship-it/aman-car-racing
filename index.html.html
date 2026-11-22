@@ -1,0 +1,172 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Aman Car Racing</title>
+<style>
+body {
+  margin: 0;
+  background: #101827;
+  color: white;
+  text-align: center;
+  font-family: Arial;
+}
+h2 { color: #ffd700; }
+canvas {
+  background: #444;
+  border: 4px solid white;
+  border-radius: 12px;
+  max-width: 95vw;
+}
+button {
+  padding: 12px 22px;
+  margin: 8px;
+  background: #00c853;
+  border: 0;
+  border-radius: 8px;
+  font-size: 17px;
+  font-weight: bold;
+  cursor: pointer;
+}
+</style>
+</head>
+<body>
+
+<h2>🏁 AMAN CAR RACING 🏁</h2>
+<p id="score">Score: 0 | Best: 0</p>
+<canvas id="game" width="360" height="550"></canvas>
+<br>
+<button onclick="restart()">RESTART</button>
+<br>
+<button onclick="move(-1)">⬅️ LEFT</button>
+<button onclick="move(1)">RIGHT ➡️</button>
+<p>Keyboard: Arrow Keys</p>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let player, cars, score, over, frame, best;
+best = Number(localStorage.getItem("amanBest") || 0);
+
+function restart() {
+  player = 160;
+  cars = [];
+  score = 0;
+  over = false;
+  frame = 0;
+  requestAnimationFrame(loop);
+}
+
+function move(dir) {
+  if (!over) player = Math.max(65, Math.min(255, player + dir * 28));
+}
+
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowLeft") move(-1);
+  if (e.key === "ArrowRight") move(1);
+});
+
+function car(x, y, color) {
+  ctx.fillStyle = color;
+  ctx.fillRect(x, y + 10, 42, 65);
+
+  ctx.fillStyle = "#111";
+  ctx.fillRect(x + 7, y + 18, 28, 18);
+
+  ctx.fillStyle = "#9eeaff";
+  ctx.fillRect(x + 8, y + 21, 26, 12);
+
+  ctx.fillStyle = "#222";
+  ctx.fillRect(x - 4, y + 20, 6, 18);
+  ctx.fillRect(x + 40, y + 20, 6, 18);
+  ctx.fillRect(x - 4, y + 52, 6, 18);
+  ctx.fillRect(x + 40, y + 52, 6, 18);
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(x + 5, y + 12, 8, 4);
+  ctx.fillRect(x + 29, y + 12, 8, 4);
+}
+
+function drawRoad() {
+  ctx.fillStyle = "#27853c";
+  ctx.fillRect(0, 0, 360, 550);
+
+  ctx.fillStyle = "#444";
+  ctx.fillRect(55, 0, 250, 550);
+
+  ctx.fillStyle = "white";
+  ctx.fillRect(65, 0, 5, 550);
+  ctx.fillRect(290, 0, 5, 550);
+
+  ctx.fillStyle = "#fff";
+  for (let i = 0; i < 550; i += 80) {
+    ctx.fillRect(178, (i + frame * 5) % 550, 5, 40);
+  }
+}
+
+function loop() {
+  if (over) return;
+
+  frame++;
+  drawRoad();
+
+  if (frame % 65 === 0) {
+    let lane = [85, 160, 235][Math.floor(Math.random() * 3)];
+    cars.push({
+      x: lane,
+      y: -85,
+      color: ["blue", "yellow", "purple", "orange"][
+        Math.floor(Math.random() * 4)
+      ]
+    });
+  }
+
+  cars.forEach(c => {
+    c.y += 4 + score * 0.05;
+    car(c.x, c.y, c.color);
+
+    if (
+      player < c.x + 42 &&
+      player + 42 > c.x &&
+      465 < c.y + 75 &&
+      530 > c.y + 10
+    ) {
+      over = true;
+    }
+  });
+
+  cars = cars.filter(c => c.y < 570);
+
+  car(player, 465, "red");
+
+  score += 0.02;
+  let points = Math.floor(score);
+
+  if (over) {
+    best = Math.max(best, points);
+    localStorage.setItem("amanBest", best);
+
+    ctx.fillStyle = "rgba(0,0,0,0.8)";
+    ctx.fillRect(0, 0, 360, 550);
+
+    ctx.fillStyle = "red";
+    ctx.font = "bold 36px Arial";
+    ctx.fillText("GAME OVER", 55, 245);
+
+    ctx.fillStyle = "white";
+    ctx.font = "22px Arial";
+    ctx.fillText("Score: " + points, 115, 290);
+    ctx.fillText("Press RESTART", 90, 340);
+  }
+
+  document.getElementById("score").innerText =
+    "Score: " + points + " | Best: " + best;
+
+  if (!over) requestAnimationFrame(loop);
+}
+
+restart();
+</script>
+</body>
+</html>
